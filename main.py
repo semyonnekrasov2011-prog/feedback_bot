@@ -2,16 +2,86 @@ import os
 import asyncio
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message
+from aiogram.filters import CommandStart
+from aiogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+CARD_NUMBER = os.getenv("CARD_NUMBER")
+
 MY_ID = 7507779053
+
+PAYMENT_LINK = "https://t.me/+QE_CXnNiHkE4OTMy"
+PRICE_RUB = 350
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# message_id сообщения у админа -> Telegram ID пользователя
+# Сообщение у администратора -> ID пользователя
 message_map = {}
+
+
+def payment_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="⭐ Перейти по ссылке",
+                    url=PAYMENT_LINK
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💳 Оплатить рублями",
+                    callback_data="rub_payment"
+                )
+            ]
+        ]
+    )
+
+
+# =========================
+# START
+# =========================
+
+@dp.message(CommandStart())
+async def start(message: Message):
+
+    await message.answer(
+        "👋 Добро пожаловать!\n\n"
+        "Выберите удобный способ оплаты:",
+        reply_markup=payment_keyboard()
+    )
+
+
+# =========================
+# ОПЛАТА РУБЛЯМИ
+# =========================
+
+@dp.callback_query(F.data == "rub_payment")
+async def rub_payment(callback):
+
+    if not CARD_NUMBER:
+        await callback.answer(
+            "Способ оплаты временно недоступен.",
+            show_alert=True
+        )
+        return
+
+    await callback.message.answer(
+        f"💳 Оплата рублями\n\n"
+        f"Стоимость: {PRICE_RUB} ₽\n\n"
+        f"Переведите ровно {PRICE_RUB} ₽ по номеру карты:\n\n"
+        f"<code>{CARD_NUMBER}</code>\n\n"
+        "После оплаты отправьте чек прямо сюда.\n"
+        "После проверки вам будет предоставлен оплаченный товар.",
+        parse_mode="HTML"
+    )
+
+    await callback.answer()
 
 
 # =========================
@@ -21,12 +91,9 @@ message_map = {}
 @dp.message(F.from_user.id == MY_ID)
 async def admin_message(message: Message):
 
-    # Отвечаем только если это Reply
     if not message.reply_to_message:
         return
 
-    # Ищем, кому принадлежит сообщение,
-    # на которое ты отвечаешь
     user_id = message_map.get(
         message.reply_to_message.message_id
     )
@@ -39,7 +106,6 @@ async def admin_message(message: Message):
         return
 
     try:
-        # Копируем твоё сообщение пользователю
         await bot.copy_message(
             chat_id=user_id,
             from_chat_id=MY_ID,
@@ -60,20 +126,15 @@ async def admin_message(message: Message):
 async def user_message(message: Message):
 
     try:
-        # Пересылаем сообщение тебе
         forwarded = await bot.forward_message(
             chat_id=MY_ID,
             from_chat_id=message.chat.id,
             message_id=message.message_id
         )
 
-        # Запоминаем связь:
-        #
-        # сообщение у тебя
-        #        ↓
-        # Telegram ID пользователя
-        #
-        message_map[forwarded.message_id] = message.from_user.id
+        message_map[forwarded.message_id] = (
+            message.from_user.id
+        )
 
     except Exception as e:
         print(f"Ошибка пересылки: {e}")
@@ -84,8 +145,13 @@ async def user_message(message: Message):
 # =========================
 
 async def main():
+
+    if not BOT_TOKEN:
+        raise ValueError(
+            "BOT_TOKEN не найден в Railway Variables"
+        )
+
     print("🤖 Бот запущен!")
-    print(f"👤 Администратор: {MY_ID}")
 
     await dp.start_polling(bot)
 
