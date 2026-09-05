@@ -66,7 +66,7 @@ async def rub_payment(callback):
 
     if not CARD_NUMBER:
         await callback.answer(
-            "Способ оплаты временно недоступен.",
+            "Способ оплаты временно недоступен. Уточните как оплатить, вам ответят в ближайшее время",
             show_alert=True
         )
         return
