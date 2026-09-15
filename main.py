@@ -7,9 +7,6 @@ from aiogram.types import (
     Message,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    CallbackQuery,
-    LabeledPrice,
-    PreCheckoutQuery,
 )
 
 
@@ -22,12 +19,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 # Твой Telegram ID
 MY_ID = 7507779053
 
-# Ссылка для оплаты рублями через Tribute
-RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
+# Специальная Telegram-ссылка с оплатой Stars
+STARS_PAYMENT_LINK = "https://t.me/+iRWfFkCKvqI3NWQy"
 
-# Цена в Telegram Stars
-# Можешь изменить число
-STAR_PRICE = 250
+# Оплата рублями через Tribute
+RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
 
 
 # ==========================================
@@ -52,8 +48,8 @@ def payment_keyboard():
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"⭐ Оплатить — {STAR_PRICE} Stars",
-                    callback_data="pay_stars"
+                    text="⭐ Оплатить Stars",
+                    url=STARS_PAYMENT_LINK
                 )
             ],
             [
@@ -77,77 +73,11 @@ async def start(message: Message):
         "👋 Добро пожаловать!\n\n"
         "Выберите удобный способ оплаты:\n\n"
         "⭐ Оплата через Telegram Stars\n"
-        "💳 Оплата рублями\n\n"
+        "💳 Оплата рублями через Tribute\n\n"
         "По каким-либо вопросам можете писать прямо в бота, "
         "вам ответят в ближайшее время.",
         reply_markup=payment_keyboard()
     )
-
-
-# ==========================================
-# ОПЛАТА TELEGRAM STARS
-# ==========================================
-
-@dp.callback_query(F.data == "pay_stars")
-async def pay_stars(callback: CallbackQuery):
-
-    await bot.send_invoice(
-        chat_id=callback.message.chat.id,
-        title="Оплата товара",
-        description="Оплата товара через Telegram Stars",
-        payload=f"order_{callback.from_user.id}",
-        currency="XTR",
-        prices=[
-            LabeledPrice(
-                label="Товар",
-                amount=STAR_PRICE
-            )
-        ]
-    )
-
-    await callback.answer()
-
-
-# ==========================================
-# ПОДТВЕРЖДЕНИЕ ПЕРЕД ОПЛАТОЙ
-# ==========================================
-
-@dp.pre_checkout_query()
-async def pre_checkout(
-    pre_checkout_query: PreCheckoutQuery
-):
-
-    await bot.answer_pre_checkout_query(
-        pre_checkout_query_id=pre_checkout_query.id,
-        ok=True
-    )
-
-
-# ==========================================
-# УСПЕШНАЯ ОПЛАТА STARS
-# ==========================================
-
-@dp.message(F.successful_payment)
-async def successful_payment(message: Message):
-
-    payment = message.successful_payment
-
-    # Проверяем, что это Stars
-    if payment.currency == "XTR":
-
-        await message.answer(
-            "✅ Оплата успешно получена!\n\n"
-            "Спасибо за покупку."
-        )
-
-        # Сообщаем тебе об оплате
-        await bot.send_message(
-            MY_ID,
-            "💰 Новая оплата Stars!\n\n"
-            f"👤 Пользователь: {message.from_user.full_name}\n"
-            f"🆔 ID: {message.from_user.id}\n"
-            f"⭐ Сумма: {payment.total_amount} Stars"
-        )
 
 
 # ==========================================
@@ -235,3 +165,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+Теперь схема простая:
+
+⭐ Stars → твоя специальная Telegram-ссылка → оплата/доступ обрабатываются Telegram.
+
+💳 Рубли → Tribute-ссылка.
+
+Из кода полностью убраны "send_invoice", "PreCheckoutQuery", "successful_payment" и "STAR_PRICE", потому что они нужны для другого способа оплаты — когда сам бот создаёт Stars-инвойс.
