@@ -1,3 +1,4 @@
+
 import os
 import asyncio
 
@@ -19,10 +20,10 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 # Твой Telegram ID
 MY_ID = 7507779053
 
-# Специальная Telegram-ссылка с оплатой Stars
+# Специальная ссылка Telegram для оплаты Stars
 STARS_PAYMENT_LINK = "https://t.me/+iRWfFkCKvqI3NWQy"
 
-# Оплата рублями через Tribute
+# Ссылка для оплаты рублями через Tribute
 RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
 
 
@@ -34,13 +35,12 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
-# Сообщение, которое бот переслал админу:
-# message_id -> user_id
+# message_id сообщения в админском чате -> user_id
 message_map = {}
 
 
 # ==========================================
-# КНОПКИ
+# КНОПКИ ОПЛАТЫ
 # ==========================================
 
 def payment_keyboard():
@@ -68,7 +68,6 @@ def payment_keyboard():
 
 @dp.message(CommandStart())
 async def start(message: Message):
-
     await message.answer(
         "👋 Добро пожаловать!\n\n"
         "Выберите удобный способ оплаты:\n\n"
@@ -104,7 +103,6 @@ async def admin_message(message: Message):
         return
 
     try:
-
         await bot.copy_message(
             chat_id=user_id,
             from_chat_id=MY_ID,
@@ -112,7 +110,6 @@ async def admin_message(message: Message):
         )
 
     except Exception as e:
-
         await message.answer(
             f"❌ Ошибка отправки:\n{e}"
         )
@@ -126,7 +123,6 @@ async def admin_message(message: Message):
 async def user_message(message: Message):
 
     try:
-
         # Пересылаем сообщение тебе
         forwarded = await bot.forward_message(
             chat_id=MY_ID,
@@ -135,15 +131,10 @@ async def user_message(message: Message):
         )
 
         # Запоминаем пользователя
-        message_map[
-            forwarded.message_id
-        ] = message.from_user.id
+        message_map[forwarded.message_id] = message.from_user.id
 
     except Exception as e:
-
-        print(
-            f"Ошибка пересылки сообщения: {e}"
-        )
+        print(f"Ошибка пересылки сообщения: {e}")
 
 
 # ==========================================
@@ -166,10 +157,18 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-Теперь схема простая:
+Что здесь изменено относительно твоего первоначального кода:
 
-⭐ Stars → твоя специальная Telegram-ссылка → оплата/доступ обрабатываются Telegram.
+- ⭐ Stars теперь ведут на "https://t.me/+iRWfFkCKvqI3NWQy"
+- 💳 рубли остались через Tribute
+- "/start" оставлен нормальным
+- пересылка сообщений и ответы админу оставлены
+- весь встроенный "send_invoice()" для Stars удалён, потому что он больше не нужен при использовании твоей готовой Telegram-ссылки
+- "PreCheckoutQuery", "LabeledPrice", "successful_payment" тоже удалены
 
-💳 Рубли → Tribute-ссылка.
+То есть при "/start" должны появиться две кнопки:
 
-Из кода полностью убраны "send_invoice", "PreCheckoutQuery", "successful_payment" и "STAR_PRICE", потому что они нужны для другого способа оплаты — когда сам бот создаёт Stars-инвойс.
+"⭐ Оплатить Stars"
+"💳 Оплатить рублями"
+
+Если после вставки даже "/start" вообще молчит, тогда проблема уже не в кнопке оплаты — значит, бот либо не запустился на Railway, либо упал при запуске. В таком случае скинь последние строки Logs Railway, и я скажу конкретно, где он дохнет.
