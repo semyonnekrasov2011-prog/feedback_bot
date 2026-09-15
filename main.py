@@ -23,7 +23,7 @@ MY_ID = 7507779053
 # Специальная ссылка Telegram для оплаты Stars
 STARS_PAYMENT_LINK = "https://t.me/+iRWfFkCKvqI3NWQy"
 
-# Ссылка для оплаты рублями через Tribute
+# Оплата рублями через Tribute
 RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
 
 
@@ -35,7 +35,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
-# message_id сообщения в админском чате -> user_id
+# message_id сообщения бота админу -> user_id пользователя
 message_map = {}
 
 
@@ -80,17 +80,15 @@ async def start(message: Message):
 
 
 # ==========================================
-# ТВОИ ОТВЕТЫ ПОЛЬЗОВАТЕЛЯМ
+# ОТВЕТЫ АДМИНА ПОЛЬЗОВАТЕЛЯМ
 # ==========================================
 
 @dp.message(F.from_user.id == MY_ID)
 async def admin_message(message: Message):
 
-    # Если сообщение не Reply — ничего не делаем
     if not message.reply_to_message:
         return
 
-    # Находим пользователя по сообщению
     user_id = message_map.get(
         message.reply_to_message.message_id
     )
@@ -123,18 +121,18 @@ async def admin_message(message: Message):
 async def user_message(message: Message):
 
     try:
-        # Пересылаем сообщение тебе
         forwarded = await bot.forward_message(
             chat_id=MY_ID,
             from_chat_id=message.chat.id,
             message_id=message.message_id
         )
 
-        # Запоминаем пользователя
         message_map[forwarded.message_id] = message.from_user.id
 
     except Exception as e:
-        print(f"Ошибка пересылки сообщения: {e}")
+        print(
+            f"Ошибка пересылки сообщения: {e}"
+        )
 
 
 # ==========================================
@@ -156,19 +154,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-Что здесь изменено относительно твоего первоначального кода:
-
-- ⭐ Stars теперь ведут на "https://t.me/+iRWfFkCKvqI3NWQy"
-- 💳 рубли остались через Tribute
-- "/start" оставлен нормальным
-- пересылка сообщений и ответы админу оставлены
-- весь встроенный "send_invoice()" для Stars удалён, потому что он больше не нужен при использовании твоей готовой Telegram-ссылки
-- "PreCheckoutQuery", "LabeledPrice", "successful_payment" тоже удалены
-
-То есть при "/start" должны появиться две кнопки:
-
-"⭐ Оплатить Stars"
-"💳 Оплатить рублями"
-
-Если после вставки даже "/start" вообще молчит, тогда проблема уже не в кнопке оплаты — значит, бот либо не запустился на Railway, либо упал при запуске. В таком случае скинь последние строки Logs Railway, и я скажу конкретно, где он дохнет.
