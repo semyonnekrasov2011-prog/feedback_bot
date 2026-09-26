@@ -1,8 +1,8 @@
+
 import os
 import asyncio
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
 from aiogram.types import (
     Message,
     InlineKeyboardMarkup,
@@ -37,13 +37,12 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
-# Сообщение, которое бот переслал админу:
-# message_id -> user_id
+# message_id сообщения админа -> user_id пользователя
 message_map = {}
 
 
 # ==========================================
-# КНОПКИ
+# КНОПКИ ОПЛАТЫ
 # ==========================================
 
 def payment_keyboard():
@@ -69,8 +68,8 @@ def payment_keyboard():
 # /START
 # ==========================================
 
-@dp.message(CommandStart())
-async def start(message: Message):
+@dp.message(F.text.startswith("/start"))
+async def start_handler(message: Message):
 
     await message.answer(
         "👋 Добро пожаловать!\n\n"
@@ -88,13 +87,12 @@ async def start(message: Message):
 # ==========================================
 
 @dp.callback_query(F.data == "pay_rub")
-async def pay_rub(callback: CallbackQuery):
+async def pay_rub_handler(callback: CallbackQuery):
 
     await callback.message.answer(
         "💳 Оплата рублями\n\n"
-        f"Номер карты:\n"
-        f"<code>{CARD_NUMBER}</code>\n\n"
-        "После оплаты отправьте чек прямо в этот бот.\n"
+        f"Номер карты:\n{CARD_NUMBER}\n\n"
+        "После оплаты отправьте чек прямо в этот бот.\n\n"
         "После проверки оплаты вам пришлют ссылку в канал."
     )
 
@@ -106,7 +104,7 @@ async def pay_rub(callback: CallbackQuery):
 # ==========================================
 
 @dp.callback_query(F.data == "pay_stars")
-async def pay_stars(callback: CallbackQuery):
+async def pay_stars_handler(callback: CallbackQuery):
 
     await bot.send_invoice(
         chat_id=callback.message.chat.id,
@@ -130,7 +128,7 @@ async def pay_stars(callback: CallbackQuery):
 # ==========================================
 
 @dp.pre_checkout_query()
-async def pre_checkout(
+async def pre_checkout_handler(
     pre_checkout_query: PreCheckoutQuery
 ):
 
@@ -145,38 +143,39 @@ async def pre_checkout(
 # ==========================================
 
 @dp.message(F.successful_payment)
-async def successful_payment(message: Message):
+async def successful_payment_handler(message: Message):
 
     payment = message.successful_payment
 
-    if payment.currency == "XTR":
+    if payment.currency != "XTR":
+        return
 
-        await message.answer(
-            "✅ Оплата успешно получена!\n\n"
-            "Спасибо за покупку."
-        )
+    await message.answer(
+        "✅ Оплата успешно получена!\n\n"
+        "Спасибо за покупку."
+    )
 
-        await bot.send_message(
-            MY_ID,
-            "💰 Новая оплата Stars!\n\n"
-            f"👤 Пользователь: {message.from_user.full_name}\n"
-            f"🆔 ID: {message.from_user.id}\n"
-            f"⭐ Сумма: {payment.total_amount} Stars"
-        )
+    await bot.send_message(
+        MY_ID,
+        "💰 Новая оплата Stars!\n\n"
+        f"👤 Пользователь: {message.from_user.full_name}\n"
+        f"🆔 ID: {message.from_user.id}\n"
+        f"⭐ Сумма: {payment.total_amount} Stars"
+    )
 
 
 # ==========================================
-# ТВОИ ОТВЕТЫ ПОЛЬЗОВАТЕЛЯМ
+# ОТВЕТ АДМИНА ПОЛЬЗОВАТЕЛЮ
 # ==========================================
 
 @dp.message(F.from_user.id == MY_ID)
-async def admin_message(message: Message):
+async def admin_message_handler(message: Message):
 
-    # Если сообщение не является Reply — ничего не делаем
+    # Админ должен отвечать именно Reply
     if not message.reply_to_message:
         return
 
-    # Ищем пользователя, которому нужно отправить ответ
+    # Получаем ID пользователя
     user_id = message_map.get(
         message.reply_to_message.message_id
     )
@@ -204,28 +203,26 @@ async def admin_message(message: Message):
 
 
 # ==========================================
-# СООБЩЕНИЯ ОТ ПОЛЬЗОВАТЕЛЕЙ
+# СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЕЙ
 # ==========================================
 
 @dp.message(
     F.from_user.id != MY_ID,
     ~F.text.startswith("/")
 )
-async def user_message(message: Message):
+async def user_message_handler(message: Message):
 
     try:
 
-        # Пересылаем сообщение тебе
         forwarded = await bot.forward_message(
             chat_id=MY_ID,
             from_chat_id=message.chat.id,
             message_id=message.message_id
         )
 
-        # Запоминаем пользователя
-        message_map[
-            forwarded.message_id
-        ] = message.from_user.id
+        # Запоминаем:
+        # сообщение админа -> пользователь
+        message_map[forwarded.message_id] = message.from_user.id
 
     except Exception as e:
 
@@ -250,6 +247,10 @@ async def main():
 
     await dp.start_polling(bot)
 
+
+# ==========================================
+# MAIN
+# ==========================================
 
 if __name__ == "__main__":
     asyncio.run(main())
