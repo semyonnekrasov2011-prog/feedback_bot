@@ -109,23 +109,22 @@ async def pay_rub_handler(callback: CallbackQuery):
 @dp.callback_query(F.data == "pay_stars")
 async def pay_stars_handler(callback: CallbackQuery):
 
-    await bot.send_invoice(
-        chat_id=callback.from_user.id,
-        title="Оплата товара",
-        description="Оплата товара через Telegram Stars",
-        payload=f"order_{callback.from_user.id}",
-        currency="XTR",
-        prices=[
-            LabeledPrice(
-                label="Товар",
-                amount=STAR_PRICE
-            )
-        ]
+    await callback.message.answer(
+        "⭐ Оплата через Telegram Stars\n\n"
+        "Нажмите кнопку ниже для оплаты:",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="⭐ Оплатить 250 Stars",
+                        url="https://t.me/+iRWfFkCKvqI3NWQy"
+                    )
+                ]
+            ]
+        )
     )
 
     await callback.answer()
-
-
 # ==========================================
 # ПОДТВЕРЖДЕНИЕ ПЕРЕД ОПЛАТОЙ
 # ==========================================
