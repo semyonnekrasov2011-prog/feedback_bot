@@ -22,9 +22,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 # Твой Telegram ID
 MY_ID = 7507779053
 
-# Ссылка для оплаты рублями через Tribute
-RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
-
 # Номер карты для оплаты рублями
 CARD_NUMBER = "2202208888777241"
 
@@ -152,7 +149,6 @@ async def successful_payment(message: Message):
 
     payment = message.successful_payment
 
-    # Проверяем, что это Stars
     if payment.currency == "XTR":
 
         await message.answer(
@@ -160,7 +156,6 @@ async def successful_payment(message: Message):
             "Спасибо за покупку."
         )
 
-        # Сообщаем тебе об оплате
         await bot.send_message(
             MY_ID,
             "💰 Новая оплата Stars!\n\n"
@@ -177,11 +172,11 @@ async def successful_payment(message: Message):
 @dp.message(F.from_user.id == MY_ID)
 async def admin_message(message: Message):
 
-    # Если сообщение не Reply — ничего не делаем
+    # Если сообщение не является Reply — ничего не делаем
     if not message.reply_to_message:
         return
 
-    # Находим пользователя по сообщению
+    # Ищем пользователя, которому нужно отправить ответ
     user_id = message_map.get(
         message.reply_to_message.message_id
     )
@@ -212,7 +207,10 @@ async def admin_message(message: Message):
 # СООБЩЕНИЯ ОТ ПОЛЬЗОВАТЕЛЕЙ
 # ==========================================
 
-@dp.message(F.from_user.id != MY_ID)
+@dp.message(
+    F.from_user.id != MY_ID,
+    ~F.text.startswith("/")
+)
 async def user_message(message: Message):
 
     try:
