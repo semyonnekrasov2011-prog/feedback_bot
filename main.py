@@ -1,8 +1,8 @@
-
 import os
 import asyncio
 
 from aiogram import Bot, Dispatcher, F
+from aiogram.filters import CommandStart
 from aiogram.types import (
     Message,
     InlineKeyboardMarkup,
@@ -30,14 +30,18 @@ STAR_PRICE = 250
 
 
 # ==========================================
-# ЗАПУСК БОТА
+# БОТ
 # ==========================================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
-# message_id сообщения админа -> user_id пользователя
+# ==========================================
+# КАРТА:
+# сообщение админа -> ID пользователя
+# ==========================================
+
 message_map = {}
 
 
@@ -68,9 +72,8 @@ def payment_keyboard():
 # /START
 # ==========================================
 
-@dp.message(F.text.startswith("/start"))
+@dp.message(CommandStart())
 async def start_handler(message: Message):
-
     await message.answer(
         "👋 Добро пожаловать!\n\n"
         "Выберите удобный способ оплаты:\n\n"
@@ -107,7 +110,7 @@ async def pay_rub_handler(callback: CallbackQuery):
 async def pay_stars_handler(callback: CallbackQuery):
 
     await bot.send_invoice(
-        chat_id=callback.message.chat.id,
+        chat_id=callback.from_user.id,
         title="Оплата товара",
         description="Оплата товара через Telegram Stars",
         payload=f"order_{callback.from_user.id}",
@@ -132,8 +135,7 @@ async def pre_checkout_handler(
     pre_checkout_query: PreCheckoutQuery
 ):
 
-    await bot.answer_pre_checkout_query(
-        pre_checkout_query_id=pre_checkout_query.id,
+    await pre_checkout_query.answer(
         ok=True
     )
 
@@ -175,7 +177,8 @@ async def admin_message_handler(message: Message):
     if not message.reply_to_message:
         return
 
-    # Получаем ID пользователя
+    # Ищем сообщение пользователя
+    # по ID пересланного сообщения
     user_id = message_map.get(
         message.reply_to_message.message_id
     )
@@ -208,6 +211,7 @@ async def admin_message_handler(message: Message):
 
 @dp.message(
     F.from_user.id != MY_ID,
+    F.text,
     ~F.text.startswith("/")
 )
 async def user_message_handler(message: Message):
@@ -222,6 +226,33 @@ async def user_message_handler(message: Message):
 
         # Запоминаем:
         # сообщение админа -> пользователь
+        message_map[forwarded.message_id] = message.from_user.id
+
+    except Exception as e:
+
+        print(
+            f"Ошибка пересылки сообщения: {e}"
+        )
+
+
+# ==========================================
+# СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЕЙ НЕ ТЕКСТОМ
+# ==========================================
+
+@dp.message(
+    F.from_user.id != MY_ID,
+    ~F.text
+)
+async def user_media_handler(message: Message):
+
+    try:
+
+        forwarded = await bot.forward_message(
+            chat_id=MY_ID,
+            from_chat_id=message.chat.id,
+            message_id=message.message_id
+        )
+
         message_map[forwarded.message_id] = message.from_user.id
 
     except Exception as e:
