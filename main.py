@@ -117,7 +117,7 @@ async def pay_stars_handler(callback: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         text="⭐ Оплатить 250 Stars",
-                        url="https://t.me/+iRWfFkCKvqI3NWQy"
+                        url="https://t.me/+UgyCrJdF-wQzMmQy"
                     )
                 ]
             ]
