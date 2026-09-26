@@ -25,8 +25,10 @@ MY_ID = 7507779053
 # Ссылка для оплаты рублями через Tribute
 RUB_PAYMENT_LINK = "https://t.me/tribute/app?startapp=s15qD"
 
+# Номер карты для оплаты рублями
+CARD_NUMBER = "2202208888777241"
+
 # Цена в Telegram Stars
-# Можешь изменить число
 STAR_PRICE = 250
 
 
@@ -59,7 +61,7 @@ def payment_keyboard():
             [
                 InlineKeyboardButton(
                     text="💳 Оплатить рублями",
-                    url=RUB_PAYMENT_LINK
+                    callback_data="pay_rub"
                 )
             ]
         ]
@@ -79,10 +81,27 @@ async def start(message: Message):
         "⭐ Оплата через Telegram Stars\n"
         "💳 Оплата рублями\n\n"
         "По каким-либо вопросам можете писать прямо в бота, "
-        "вам ответят в ближайшее время.
-Чтобы оплатить рублями кидайте на карту 2202208888777241 и кидайте чек",
+        "вам ответят в ближайшее время.",
         reply_markup=payment_keyboard()
     )
+
+
+# ==========================================
+# ОПЛАТА РУБЛЯМИ
+# ==========================================
+
+@dp.callback_query(F.data == "pay_rub")
+async def pay_rub(callback: CallbackQuery):
+
+    await callback.message.answer(
+        "💳 Оплата рублями\n\n"
+        f"Номер карты:\n"
+        f"<code>{CARD_NUMBER}</code>\n\n"
+        "После оплаты отправьте чек прямо в этот бот.\n"
+        "После проверки оплаты вам пришлют ссылку в канал."
+    )
+
+    await callback.answer()
 
 
 # ==========================================
