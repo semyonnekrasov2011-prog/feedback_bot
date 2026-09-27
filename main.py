@@ -110,18 +110,7 @@ async def pay_rub_handler(callback: CallbackQuery):
 async def pay_stars_handler(callback: CallbackQuery):
 
     await callback.message.answer(
-        "⭐ Оплата через Telegram Stars\n\n"
-        "Нажмите кнопку ниже для оплаты:",
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="⭐ Оплатить 250 Stars",
-                        url="https://t.me/+UgyCrJdF-wQzMmQy"
-                    )
-                ]
-            ]
-        )
+        "https://t.me/+UgyCrJdF-wQzMmQy"
     )
 
     await callback.answer()
