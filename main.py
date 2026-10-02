@@ -8,60 +8,60 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     CallbackQuery,
+    LabeledPrice,
+    PreCheckoutQuery,
 )
 
 
-# ==========================================
+# =========================
 # НАСТРОЙКИ
-# ==========================================
+# =========================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Telegram ID администратора
 MY_ID = 7507779053
 
-# Общая карта для оплаты рублями
+# Карта для оплаты в рублях
 CARD_NUMBER = "2202208888777241"
 
+# Цены
+CHANNEL_1_STARS = 250
+CHANNEL_1_RUB = 330
 
-# ==========================================
-# STARS-ССЫЛКИ
-# ==========================================
-
-CHANNEL_1_STARS = "https://t.me/+iRWfFkCKvqI3NWQy"
-CHANNEL_2_STARS = "https://t.me/+S49c_NiM7p9jYzM6"
+CHANNEL_2_STARS = 400
+CHANNEL_2_RUB = 450
 
 
-# ==========================================
-# БОТ
-# ==========================================
+# =========================
+# BOT / DISPATCHER
+# =========================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 
-# ==========================================
-# СООТВЕТСТВИЕ:
-# сообщение администратора -> пользователь
-# ==========================================
-
-message_map = {}
-
-
-# ==========================================
-# СООТВЕТСТВИЕ:
-# сообщение "Я оплатил" -> пользователь
-# ==========================================
-
+# ID сообщения администратора -> ID покупателя
+#
+# Используется для Stars:
+# администратор отвечает Reply на сообщение
+# с оплатой и отправляет одноразовую ссылку.
 payment_map = {}
 
 
-# ==========================================
-# ВЫБОР КАНАЛА
-# ==========================================
+# ID пересланного сообщения администратора -> ID пользователя
+#
+# Используется для обычной переписки:
+# пользователь пишет боту -> сообщение приходит админу ->
+# админ отвечает Reply -> ответ уходит пользователю.
+message_map = {}
+
+
+# =========================
+# КЛАВИАТУРЫ
+# =========================
 
 def channels_keyboard():
-
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -80,31 +80,25 @@ def channels_keyboard():
     )
 
 
-# ==========================================
-# КНОПКИ ОПЛАТЫ
-# ==========================================
-
 def payment_keyboard(channel):
-
     if channel == 1:
-        stars_text = "⭐ Оплатить — 250 Stars"
-        rub_text = "💳 Оплатить — 330 ₽"
-
+        stars = CHANNEL_1_STARS
+        rub = CHANNEL_1_RUB
     else:
-        stars_text = "⭐ Оплатить — 400 Stars"
-        rub_text = "💳 Оплатить — 450 ₽"
+        stars = CHANNEL_2_STARS
+        rub = CHANNEL_2_RUB
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=stars_text,
+                    text=f"⭐ Оплатить — {stars} Stars",
                     callback_data=f"pay_stars_{channel}"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text=rub_text,
+                    text=f"💳 Оплатить — {rub} ₽",
                     callback_data=f"pay_rub_{channel}"
                 )
             ],
@@ -118,31 +112,12 @@ def payment_keyboard(channel):
     )
 
 
-# ==========================================
-# КНОПКА "Я ОПЛАТИЛ"
-# ==========================================
-
-def paid_keyboard(channel):
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Я оплатил",
-                    callback_data=f"paid_{channel}"
-                )
-            ]
-        ]
-    )
-
-
-# ==========================================
+# =========================
 # /START
-# ==========================================
+# =========================
 
 @dp.message(CommandStart())
 async def start_handler(message: Message):
-
     await message.answer(
         "👋 Добро пожаловать!\n\n"
         "Выберите канал, который хотите приобрести:",
@@ -150,17 +125,16 @@ async def start_handler(message: Message):
     )
 
 
-# ==========================================
-# КАНАЛ 1
-# ==========================================
+# =========================
+# ВЫБОР КАНАЛА
+# =========================
 
 @dp.callback_query(F.data == "channel_1")
 async def channel_1_handler(callback: CallbackQuery):
-
     await callback.message.edit_text(
         "📢 Канал 1\n\n"
-        "⭐ Стоимость: 250 Stars\n"
-        "💳 Стоимость: 330 ₽\n\n"
+        f"⭐ Стоимость: {CHANNEL_1_STARS} Stars\n"
+        f"💳 Стоимость: {CHANNEL_1_RUB} ₽\n\n"
         "Выберите способ оплаты:",
         reply_markup=payment_keyboard(1)
     )
@@ -168,17 +142,12 @@ async def channel_1_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ==========================================
-# КАНАЛ 2
-# ==========================================
-
 @dp.callback_query(F.data == "channel_2")
 async def channel_2_handler(callback: CallbackQuery):
-
     await callback.message.edit_text(
         "📢 Канал 2\n\n"
-        "⭐ Стоимость: 400 Stars\n"
-        "💳 Стоимость: 450 ₽\n\n"
+        f"⭐ Стоимость: {CHANNEL_2_STARS} Stars\n"
+        f"💳 Стоимость: {CHANNEL_2_RUB} ₽\n\n"
         "Выберите способ оплаты:",
         reply_markup=payment_keyboard(2)
     )
@@ -186,13 +155,12 @@ async def channel_2_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ==========================================
-# НАЗАД
-# ==========================================
+# =========================
+# НАЗАД К КАНАЛАМ
+# =========================
 
 @dp.callback_query(F.data == "back_channels")
 async def back_channels_handler(callback: CallbackQuery):
-
     await callback.message.edit_text(
         "👋 Выберите канал, который хотите приобрести:",
         reply_markup=channels_keyboard()
@@ -201,182 +169,358 @@ async def back_channels_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ==========================================
-# STARS — КАНАЛ 1
-# ==========================================
+# =========================
+# ОПЛАТА STARS — КАНАЛ 1
+# =========================
 
 @dp.callback_query(F.data == "pay_stars_1")
 async def pay_stars_1_handler(callback: CallbackQuery):
 
-    await callback.message.answer(
-        "⭐ Оплата канала 1\n\n"
-        "Откройте ссылку и произведите оплату:\n"
-        f"{CHANNEL_1_STARS}\n\n"
-        "После оплаты нажмите кнопку «✅ Я оплатил».",
-        reply_markup=paid_keyboard(1)
+    await bot.send_invoice(
+        chat_id=callback.from_user.id,
+
+        title="Канал 1",
+
+        description="Доступ к каналу 1",
+
+        payload=f"channel_1:{callback.from_user.id}",
+
+        currency="XTR",
+
+        prices=[
+            LabeledPrice(
+                label="Доступ к каналу 1",
+                amount=CHANNEL_1_STARS
+            )
+        ]
     )
 
     await callback.answer()
 
 
-# ==========================================
-# STARS — КАНАЛ 2
-# ==========================================
+# =========================
+# ОПЛАТА STARS — КАНАЛ 2
+# =========================
 
 @dp.callback_query(F.data == "pay_stars_2")
 async def pay_stars_2_handler(callback: CallbackQuery):
 
-    await callback.message.answer(
-        "⭐ Оплата канала 2\n\n"
-        "Откройте ссылку и произведите оплату:\n"
-        f"{CHANNEL_2_STARS}\n\n"
-        "После оплаты нажмите кнопку «✅ Я оплатил».",
-        reply_markup=paid_keyboard(2)
+    await bot.send_invoice(
+        chat_id=callback.from_user.id,
+
+        title="Канал 2",
+
+        description="Доступ к каналу 2",
+
+        payload=f"channel_2:{callback.from_user.id}",
+
+        currency="XTR",
+
+        prices=[
+            LabeledPrice(
+                label="Доступ к каналу 2",
+                amount=CHANNEL_2_STARS
+            )
+        ]
     )
 
     await callback.answer()
 
 
-# ==========================================
-# РУБЛИ — КАНАЛ 1
-# ==========================================
+# =========================
+# PRE-CHECKOUT
+# =========================
+
+@dp.pre_checkout_query()
+async def pre_checkout_handler(
+    pre_checkout_query: PreCheckoutQuery
+):
+
+    payload = pre_checkout_query.invoice_payload
+
+    if not (
+        payload.startswith("channel_1:")
+        or payload.startswith("channel_2:")
+    ):
+        await pre_checkout_query.answer(
+            ok=False,
+            error_message="Неизвестный заказ."
+        )
+        return
+
+    await pre_checkout_query.answer(ok=True)
+
+
+# =========================
+# УСПЕШНАЯ ОПЛАТА STARS
+# =========================
+
+@dp.message(F.successful_payment)
+async def successful_payment_handler(message: Message):
+
+    payment = message.successful_payment
+
+    # Нас интересуют только Telegram Stars
+    if payment.currency != "XTR":
+        return
+
+    payload = payment.invoice_payload
+
+    # Определяем канал
+    if payload.startswith("channel_1:"):
+
+        channel_name = "Канал 1"
+        expected_price = CHANNEL_1_STARS
+
+    elif payload.startswith("channel_2:"):
+
+        channel_name = "Канал 2"
+        expected_price = CHANNEL_2_STARS
+
+    else:
+
+        await message.answer(
+            "❌ Не удалось определить товар."
+        )
+
+        return
+
+    # Проверяем сумму
+    if payment.total_amount != expected_price:
+
+        await bot.send_message(
+            MY_ID,
+
+            "⚠️ ВНИМАНИЕ: получена оплата "
+            "с неожиданной суммой!\n\n"
+
+            f"👤 Пользователь: "
+            f"{message.from_user.full_name}\n"
+
+            f"🆔 ID: "
+            f"{message.from_user.id}\n"
+
+            f"📢 Товар: "
+            f"{channel_name}\n"
+
+            f"⭐ Получено: "
+            f"{payment.total_amount}\n"
+
+            f"⭐ Ожидалось: "
+            f"{expected_price}"
+        )
+
+        await message.answer(
+            "⚠️ Платёж получен, но возникла проблема "
+            "с проверкой суммы.\n\n"
+            "Администратор проверит оплату."
+        )
+
+        return
+
+    # Отправляем админу уведомление
+    admin_message = await bot.send_message(
+
+        MY_ID,
+
+        "💰 НОВАЯ ОПЛАТА STARS!\n\n"
+
+        f"👤 Пользователь: "
+        f"{message.from_user.full_name}\n"
+
+        f"🆔 ID: "
+        f"{message.from_user.id}\n"
+
+        f"📢 Канал: "
+        f"{channel_name}\n"
+
+        f"⭐ Сумма: "
+        f"{payment.total_amount} Stars\n"
+
+        f"🧾 Charge ID: "
+        f"{payment.telegram_payment_charge_id}\n\n"
+
+        "✅ Оплата подтверждена Telegram.\n\n"
+
+        "Чтобы выдать доступ, ответьте "
+        "REPLY на это сообщение "
+        "одноразовой ссылкой-приглашением "
+        "на нужный канал."
+    )
+
+    # Запоминаем, кому принадлежит эта оплата
+    payment_map[
+        admin_message.message_id
+    ] = message.from_user.id
+
+    # Сообщение покупателю
+    await message.answer(
+        "✅ Оплата успешно получена!\n\n"
+
+        "Спасибо за покупку.\n"
+
+        "Администратор сейчас выдаст вам "
+        "одноразовую ссылку на канал."
+    )
+
+
+# =========================
+# ОПЛАТА РУБЛЯМИ — КАНАЛ 1
+# =========================
 
 @dp.callback_query(F.data == "pay_rub_1")
 async def pay_rub_1_handler(callback: CallbackQuery):
 
     await callback.message.answer(
+
         "💳 Оплата канала 1\n\n"
-        f"Номер карты:\n{CARD_NUMBER}\n\n"
-        "Сумма: 330 ₽\n\n"
-        "После оплаты отправьте чек прямо в этот бот."
+
+        f"Номер карты:\n"
+        f"{CARD_NUMBER}\n\n"
+
+        f"Сумма: {CHANNEL_1_RUB} ₽\n\n"
+
+        "После оплаты отправьте чек "
+        "прямо в этот бот."
     )
 
     await callback.answer()
 
 
-# ==========================================
-# РУБЛИ — КАНАЛ 2
-# ==========================================
+# =========================
+# ОПЛАТА РУБЛЯМИ — КАНАЛ 2
+# =========================
 
 @dp.callback_query(F.data == "pay_rub_2")
 async def pay_rub_2_handler(callback: CallbackQuery):
 
     await callback.message.answer(
+
         "💳 Оплата канала 2\n\n"
-        f"Номер карты:\n{CARD_NUMBER}\n\n"
-        "Сумма: 450 ₽\n\n"
-        "После оплаты отправьте чек прямо в этот бот."
+
+        f"Номер карты:\n"
+        f"{CARD_NUMBER}\n\n"
+
+        f"Сумма: {CHANNEL_2_RUB} ₽\n\n"
+
+        "После оплаты отправьте чек "
+        "прямо в этот бот."
     )
 
     await callback.answer()
 
 
-# ==========================================
-# ПОЛЬЗОВАТЕЛЬ НАЖАЛ "Я ОПЛАТИЛ"
-# ==========================================
-
-@dp.callback_query(F.data.startswith("paid_"))
-async def paid_handler(callback: CallbackQuery):
-
-    channel = callback.data.split("_")[1]
-
-    if channel == "1":
-        channel_name = "Канал 1"
-        price = "250 Stars"
-
-    else:
-        channel_name = "Канал 2"
-        price = "400 Stars"
-
-    user = callback.from_user
-
-    # Сообщение админу
-    admin_message = await bot.send_message(
-        MY_ID,
-        "🔔 Пользователь сообщил об оплате!\n\n"
-        f"👤 Имя: {user.full_name}\n"
-        f"🆔 ID: {user.id}\n"
-        f"📢 Канал: {channel_name}\n"
-        f"⭐ Сумма: {price}\n\n"
-        "Если оплата подтверждена, ответьте Reply "
-        "на это сообщение ссылкой на канал."
-    )
-
-    # Запоминаем, кому нужно отправить ссылку
-    payment_map[admin_message.message_id] = user.id
-
-    await callback.message.answer(
-        "✅ Информация об оплате отправлена администратору.\n\n"
-        "После проверки оплаты вам отправят ссылку на канал."
-    )
-
-    await callback.answer()
-
-
-# ==========================================
-# ОТВЕТ АДМИНА
-# ==========================================
+# =========================
+# СООБЩЕНИЯ АДМИНИСТРАТОРА
+# =========================
 
 @dp.message(F.from_user.id == MY_ID)
 async def admin_message_handler(message: Message):
 
+    # Работаем только если админ отвечает
+    # на сообщение через Reply
     if not message.reply_to_message:
         return
 
-    replied_message_id = message.reply_to_message.message_id
+    replied_message_id = (
+        message.reply_to_message.message_id
+    )
 
-    # Проверяем, является ли это уведомлением об оплате
-    user_id = payment_map.get(replied_message_id)
+    # ---------------------------------
+    # 1. ВЫДАЧА ССЫЛКИ ПОСЛЕ STARS
+    # ---------------------------------
+
+    user_id = payment_map.get(
+        replied_message_id
+    )
 
     if user_id:
 
+        # Ссылка должна быть отправлена
+        # именно текстовым сообщением
+        if not message.text:
+
+            await message.answer(
+                "❌ Отправь одноразовую ссылку "
+                "текстом через Reply."
+            )
+
+            return
+
         try:
 
-            await bot.copy_message(
-                chat_id=user_id,
-                from_chat_id=MY_ID,
-                message_id=message.message_id
+            await bot.send_message(
+
+                user_id,
+
+                "🎉 Оплата подтверждена!\n\n"
+
+                "🔗 Ваша одноразовая "
+                "ссылка для входа:\n"
+
+                f"{message.text}"
             )
 
             await message.answer(
                 "✅ Ссылка отправлена пользователю."
             )
 
+            # После успешной отправки удаляем
+            # связь, чтобы повторно её использовать
+            # через этот платёж было нельзя.
+            del payment_map[
+                replied_message_id
+            ]
+
         except Exception as e:
 
             await message.answer(
-                f"❌ Ошибка отправки ссылки:\n{e}"
+                "❌ Не удалось отправить ссылку:\n"
+                f"{e}"
             )
 
         return
 
-    # Обычный ответ пользователю
-    user_id = message_map.get(replied_message_id)
+    # ---------------------------------
+    # 2. ОБЫЧНЫЙ ОТВЕТ ПОЛЬЗОВАТЕЛЮ
+    # ---------------------------------
+
+    user_id = message_map.get(
+        replied_message_id
+    )
 
     if not user_id:
+
         await message.answer(
             "❌ Не удалось определить пользователя."
         )
+
         return
 
     try:
 
+        # Копируем сообщение админа
+        # пользователю: текст, фото, видео и т.д.
         await bot.copy_message(
+
             chat_id=user_id,
+
             from_chat_id=MY_ID,
+
             message_id=message.message_id
         )
 
     except Exception as e:
 
         await message.answer(
-            f"❌ Ошибка отправки:\n{e}"
+            "❌ Ошибка отправки:\n"
+            f"{e}"
         )
 
 
-# ==========================================
-# ТЕКСТОВЫЕ СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЕЙ
-# ==========================================
+# =========================
+# СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЕЙ
+# =========================
 
 @dp.message(
     F.from_user.id != MY_ID,
@@ -388,12 +532,18 @@ async def user_message_handler(message: Message):
     try:
 
         forwarded = await bot.forward_message(
+
             chat_id=MY_ID,
+
             from_chat_id=message.chat.id,
+
             message_id=message.message_id
         )
 
-        message_map[forwarded.message_id] = message.from_user.id
+        # Запоминаем пользователя
+        message_map[
+            forwarded.message_id
+        ] = message.from_user.id
 
     except Exception as e:
 
@@ -402,9 +552,9 @@ async def user_message_handler(message: Message):
         )
 
 
-# ==========================================
-# ФОТО / ВИДЕО / ДОКУМЕНТЫ И ДРУГОЕ
-# ==========================================
+# =========================
+# МЕДИА ОТ ПОЛЬЗОВАТЕЛЯ
+# =========================
 
 @dp.message(
     F.from_user.id != MY_ID,
@@ -415,12 +565,18 @@ async def user_media_handler(message: Message):
     try:
 
         forwarded = await bot.forward_message(
+
             chat_id=MY_ID,
+
             from_chat_id=message.chat.id,
+
             message_id=message.message_id
         )
 
-        message_map[forwarded.message_id] = message.from_user.id
+        # Запоминаем пользователя
+        message_map[
+            forwarded.message_id
+        ] = message.from_user.id
 
     except Exception as e:
 
@@ -429,27 +585,33 @@ async def user_media_handler(message: Message):
         )
 
 
-# ==========================================
+# =========================
 # ЗАПУСК
-# ==========================================
+# =========================
 
 async def main():
 
     if not BOT_TOKEN:
 
         raise ValueError(
-            "BOT_TOKEN не найден! "
-            "Добавь его в Railway Variables."
+            "BOT_TOKEN не найден!\n"
+            "Добавь BOT_TOKEN в Railway Variables."
         )
 
-    print("🤖 Бот успешно запущен!")
+    print(
+        "========================================"
+    )
+
+    print(
+        "🤖 БОТ УСПЕШНО ЗАПУЩЕН!"
+    )
+
+    print(
+        "========================================"
+    )
 
     await dp.start_polling(bot)
 
-
-# ==========================================
-# MAIN
-# ==========================================
 
 if __name__ == "__main__":
     asyncio.run(main())
