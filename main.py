@@ -147,7 +147,7 @@ async def channel_1_handler(callback: CallbackQuery):
 async def channel_2_handler(callback: CallbackQuery):
     await callback.message.edit_text(
     "📢 Канал 2 — твинк-контент\n\n"
-    "Канал с "взрослым".\n\n"
+    "Канал с взрослым 18-x.\n\n"
     "Если непонятна тема, уточните.\n\n"
     f"⭐ Стоимость: {CHANNEL_2_STARS} Stars\n"
     f"💳 Стоимость: {CHANNEL_2_RUB} ₽\n\n"
