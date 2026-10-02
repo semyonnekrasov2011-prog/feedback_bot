@@ -132,12 +132,13 @@ async def start_handler(message: Message):
 @dp.callback_query(F.data == "channel_1")
 async def channel_1_handler(callback: CallbackQuery):
     await callback.message.edit_text(
-        "📢 Канал 1\n\n"
-        f"⭐ Стоимость: {CHANNEL_1_STARS} Stars\n"
-        f"💳 Стоимость: {CHANNEL_1_RUB} ₽\n\n"
-        "Выберите способ оплаты:",
-        reply_markup=payment_keyboard(1)
-    )
+    "📢 Канал 1 — фембои\n\n"
+    "Канал с фембоями.\n\n"
+    f"⭐ Стоимость: {CHANNEL_1_STARS} Stars\n"
+    f"💳 Стоимость: {CHANNEL_1_RUB} ₽\n\n"
+    "Выберите способ оплаты:",
+    reply_markup=payment_keyboard(1)
+)
 
     await callback.answer()
 
@@ -145,12 +146,14 @@ async def channel_1_handler(callback: CallbackQuery):
 @dp.callback_query(F.data == "channel_2")
 async def channel_2_handler(callback: CallbackQuery):
     await callback.message.edit_text(
-        "📢 Канал 2\n\n"
-        f"⭐ Стоимость: {CHANNEL_2_STARS} Stars\n"
-        f"💳 Стоимость: {CHANNEL_2_RUB} ₽\n\n"
-        "Выберите способ оплаты:",
-        reply_markup=payment_keyboard(2)
-    )
+    "📢 Канал 2 — твинк-контент\n\n"
+    "Канал с "взрослым".\n\n"
+    "Если непонятна тема, уточните.\n\n"
+    f"⭐ Стоимость: {CHANNEL_2_STARS} Stars\n"
+    f"💳 Стоимость: {CHANNEL_2_RUB} ₽\n\n"
+    "Выберите способ оплаты:",
+    reply_markup=payment_keyboard(2)
+)
 
     await callback.answer()
 
