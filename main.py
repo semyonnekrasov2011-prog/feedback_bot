@@ -29,8 +29,8 @@ CARD_NUMBER = "2202208888777241"
 CHANNEL_1_STARS = 250
 CHANNEL_1_RUB = 330
 
-CHANNEL_2_STARS = 400
-CHANNEL_2_RUB = 450
+CHANNEL_2_STARS = 350
+CHANNEL_2_RUB = 400
 
 
 # =========================
@@ -72,7 +72,7 @@ def channels_keyboard():
             ],
             [
                 InlineKeyboardButton(
-                    text="📢 Канал 2 — 450 ₽ / 400 ⭐",
+                    text="📢 Канал 2 — 400 ₽ / 350 ⭐",
                     callback_data="channel_2"
                 )
             ]
