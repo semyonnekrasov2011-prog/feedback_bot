@@ -26,8 +26,8 @@ MY_ID = 7507779053
 CARD_NUMBER = "2202208888777241"
 
 # Цены
-CHANNEL_1_STARS = 250
-CHANNEL_1_RUB = 330
+CHANNEL_1_STARS = 360
+CHANNEL_1_RUB = 410
 
 CHANNEL_2_STARS = 350
 CHANNEL_2_RUB = 400
@@ -66,7 +66,7 @@ def channels_keyboard():
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="📢 Канал 1 — 330 ₽ / 250 ⭐",
+                    text="📢 Канал 1 — 410 ₽ / 360 ⭐",
                     callback_data="channel_1"
                 )
             ],
